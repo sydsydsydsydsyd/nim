@@ -101,7 +101,12 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        raise NotImplementedError
+        # IF NO Q-VALUE EXISTS YET
+        if (tuple(state), action) not in self.q:
+            return 0
+        # IF A Q-VALUE EXISTS THEN RETURN IT
+        else:
+            return self.q[(tuple(state), action)]
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -118,7 +123,8 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+
+        self.q[tuple(state), action] = (old_q + (self.alpha * (reward + future_rewards - old_q)))
 
     def best_future_reward(self, state):
         """
@@ -130,7 +136,24 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+
+        # A TUPLE OF ALL AVAILABLE MOVES
+        available = tuple(Nim.available_actions(tuple(state)))
+
+        # RETURN ZERO IF NO MOVES AVAILABLE
+        if len(available) == 0:
+            return 0
+
+        # BEGIN WITH MIN
+        best = 0
+        for action in available:
+            # IF ITS IN SELF.Q
+            if (tuple(state), action) in self.q:
+                # AND IF ITS Q-VALUE IS BETTER THAN THE BEST
+                if self.q[(tuple(state), action)] > best:
+                    # IT IS THE NEW BEST
+                    best = self.q[tuple(state), action]
+        return best
 
     def choose_action(self, state, epsilon=True):
         """
@@ -147,7 +170,42 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+
+        # TUPLE OF AVAILABLE ACTIONS
+        available = tuple(Nim.available_actions(tuple(state)))
+
+        # AS LONG AS SELF.Q ISN'T EMPTY...
+        if len(self.q) != 0:
+            if epsilon:
+                # CHOOSE NUMBER BETWEEN 0-1
+                prob = random.uniform(0, 1)
+                # IF IT'S BIGGER THAN THE EPSILON VALUE...
+                if prob > self.epsilon:
+                    for action in available:
+                        # AND IT HAS A Q-VALUE...
+                        if (tuple(state), action) in self.q:
+                            # IF IT IS THE BEST FUTURE REWARD FOR THAT GIVEN STATE...
+                            if self.q[(tuple(state), action)] == self.best_future_reward(state):
+                                # THEN CHOOSE THAT ACTION
+                                return tuple(action)
+                # IF THE RANDOM NUMBER IS <= EPSILON VALUE...
+                else:
+                    # CHOOSE A RANDOM AVAILABLE NUMBER
+                    return tuple(random.choice(list(available)))
+
+            # IF EPSILON IS FALSE...
+            else:
+                for action in available:
+                    # AND IF IT HAS A Q-VALUE...
+                    if (tuple(state), action) in self.q:
+                        # AND IF THAT Q-VALUE IS THE BEST POSSIBLE
+                        if self.q[(tuple(state), action)] == self.best_future_reward(state):
+                            # THEN CHOOSE THAT ONE
+                            return tuple(action)
+        # IF THE LIST OF Q-VALUES IS EMPTY THEN CHOOSE A RANDOM OPTION
+        return tuple(random.choice(list(available)))
+
+        #raise NotImplementedError
 
 
 def train(n):
